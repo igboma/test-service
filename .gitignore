@@ -1,0 +1,17 @@
+# Node.js related
+/node_modules
+
+# Environment variables
+.env
+
+# Editor files
+.vscode/
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
+
+# Testing files
+coverage/
