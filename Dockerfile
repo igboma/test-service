@@ -1,5 +1,7 @@
 FROM node:lts-alpine
 
+RUN apk update && apk upgrade
+
 WORKDIR /usr/src/app
 
 COPY package*.json ./
