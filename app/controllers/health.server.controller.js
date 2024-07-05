@@ -1,3 +1,3 @@
 exports.healthCheck = (req, res) => {
-  res.status(200).json({ status: "up" });
+  res.status(200).json({ status: 'up' });
 };

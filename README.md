@@ -1,3 +1,1 @@
-# test-service
-
-Test Service
+# palindrome-service

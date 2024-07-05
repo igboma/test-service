@@ -1,0 +1,30 @@
+test-serverreplicaCount: 1
+
+image:
+  repository: mikigbo/test-server
+  tag: "0.0.4"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 3000
+  targetPort: 9091
+
+ingress:
+  enabled: true
+  className: ""
+  annotations: {}
+  hosts:
+    - host: test-server.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+
+secret:
+  name: test-server-secret
+  data: {}
+
+configMap:
+  envVars:
+    MY_ENV_VAR: "value"
