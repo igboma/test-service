@@ -15,7 +15,7 @@ jobs:
       - name: Build and tag Docker image
         run: |
           docker build -t test-server:${{ github.event.release.tag_name }} .
-          docker tag test-server:${{ github.event.release.tag_name }} your-docker-username/test-server:${{ github.event.release.tag_name }}
+          docker tag test-server:${{ github.event.release.tag_name }} mikigbo/test-server:${{ github.event.release.tag_name }}
 
       - name: Install trivy
         run: |
@@ -52,4 +52,4 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Push Docker image to Docker Hub
-        run: docker push your-docker-username/test-server:${{ github.event.release.tag_name }}
+        run: docker push mikigbo/test-server:${{ github.event.release.tag_name }}
