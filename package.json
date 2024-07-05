@@ -6,6 +6,11 @@
     "name": "Darryl Patterson",
     "email": "widgetapps@gmail.com"
   },
+  "scripts": {
+    "start": "node server.js",
+    "lint": "eslint .",
+    "test": "mocha --exit"
+  },
   "license": "LicenseRef-LICENSE",
   "main": "server.js",
   "engines": {
@@ -26,9 +31,13 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.6.0",
+    "chai": "4.4.1",
+    "chai-http": "4.4.0",
     "eslint": "^9.6.0",
+    "eslint-plugin-node": "^11.1.0",
     "globals": "^15.8.0",
-    "prettier": "^3.3.2",
-    "sonarqube-scanner": "^4.0.1"
+    "mocha": "^10.6.0",
+    "sinon": "^18.0.0",
+    "supertest": "^7.0.0"
   }
 }
