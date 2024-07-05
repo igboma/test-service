@@ -18,13 +18,5 @@ spec:
         - name: {{ .Release.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          env:
-            {{- range $key, $value := .Values.configMap.envVars }}
-            - name: {{ $key }}
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ .Release.Name }}-config
-                  key: {{ $key }}
-            {{- end }}
           ports:
-            - containerPort: {{ .Values.service.targetPort }}
+            - containerPort: 9091

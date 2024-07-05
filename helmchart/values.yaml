@@ -1,7 +1,7 @@
-test-serverreplicaCount: 1
+replicaCount: 1
 
 image:
-  repository: mikigbo/test-server
+  repository: ghcr.io/mikigbo/test-server
   tag: "0.0.4"
   pullPolicy: IfNotPresent
 
@@ -25,6 +25,6 @@ secret:
   name: test-server-secret
   data: {}
 
-configMap:
-  envVars:
-    MY_ENV_VAR: "value"
+config:
+  setting1: "value1"
+  setting2: "value2"
