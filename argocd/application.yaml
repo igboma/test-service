@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: test-server
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: 'https://github.com/igboma/test-service'
+    targetRevision: cd-release
+    path: helmchart  # Path to the Helm chart directory
+    helm:
+      valueFiles:
+        - ../argocd/values.yaml  # Path to the custom values.yaml relative to the chart
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: microservice
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
