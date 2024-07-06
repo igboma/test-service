@@ -56,8 +56,9 @@ jobs:
         run: |
           docker push mikigbo/test-server:${{ github.event.release.tag_name }}
           docker push mikigbo/test-server:latest
-          - name: Update values.yaml in main branch and merge to release tag
-          run: |
+
+      - name: Update values.yaml in main branch and merge to release tag
+        run: |
             TAG=$(echo "${{ github.event.release.tag_name }}")
         
             # Configure Git
