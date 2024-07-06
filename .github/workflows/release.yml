@@ -56,3 +56,33 @@ jobs:
         run: |
           docker push mikigbo/test-server:${{ github.event.release.tag_name }}
           docker push mikigbo/test-server:latest
+          - name: Update values.yaml in main branch and merge to release tag
+          run: |
+            TAG=$(echo "${{ github.event.release.tag_name }}")
+        
+            # Configure Git
+            git config user.email "actions@github.com"
+            git config user.name "GitHub Actions"
+        
+            # Fetch and checkout main branch
+            git fetch origin
+            git checkout main
+            git pull origin main
+        
+            # Update the tag in values.yaml
+            sed -i "s/tag: .*/tag: \"$TAG\"/" argocd/values.yaml
+        
+            # Commit and push changes
+            git add argocd/values.yaml
+            git commit -m "Update values.yaml for release $TAG"
+            git push origin main
+            
+            # Checkout cd-release branch
+            git checkout cd-release
+            git pull origin cd-release
+        
+            # Merge main into cd-release, preferring main's changes in conflicts and allowing unrelated histories
+            git merge origin/main --allow-unrelated-histories -X theirs || exit 1
+        
+            # Push changes
+            git push origin cd-release
