@@ -1,7 +1,7 @@
 replicaCount: 1
 
 image:
-  repository: ghcr.io/mikigbo/test-server
+  repository: mikigbo/test-server
   tag: "0.0.4"
   pullPolicy: IfNotPresent
 
