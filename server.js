@@ -10,12 +10,10 @@ if (!module.parent) {
     const server = app.listen(config.port, () => {
         console.log(`Server is running on port ${config.port}`);
     });
-
     // Graceful shutdown
     process.on('SIGINT', function () {
         console.log('Gracefully shutting down from SIGINT (Ctrl-C)');
-        console.log('Server closed');
-        server.close();
+         // some other closing procedures go here
         process.exit(1);
     });
 }

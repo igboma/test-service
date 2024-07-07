@@ -1,6 +1,7 @@
 'use strict';
 
 const Message = require('../models/message.model');
+const messages = require('../helper/contants'); // Adjust the path as necessary
 const model = new Message();
 
 exports.getMessages = function (req, res) {
@@ -12,30 +13,30 @@ exports.getMessages = function (req, res) {
     const query = {};
     const projection = { text: 1, isPalindrome: 1 };
 
-    model.find(query, projection, { skip: offset, limit: limit, sort: { [sortBy]: sortOrder } }, function (err, messages) {
+    model.find(query, projection, { skip: offset, limit: limit, sort: { [sortBy]: sortOrder } }, function (err, messageResponse) {
         if (err) {
             console.error(err);
-            res.status(500).send({ message: 'Database error finding messages.' });
+            res.status(500).send({ message: messages.databaseErrorFindingMessages });
             return;
         }
-        res.json(messages);
+        res.json(messageResponse);
     });
 };
 
 exports.getSingleMessage = function (req, res) {
     const id = req.params.id;
     if (!id || id === 'undefined') {
-        return res.status(400).send({ message: 'id field is required' });
+        return res.status(400).send({ message: messages.idFieldRequired });
     }
 
     model.findById(id, { text: 1, isPalindrome: 1 }, function (err, message) {
         if (err) {
             console.error(err);
-            res.status(500).send({ message: 'Database error finding the message.' });
+            res.status(500).send({ message: messages.databaseErrorFindingMessage });
             return;
         }
         if (!message) {
-            res.status(404).send({ message: 'Message not found' });
+            res.status(404).send({ message: messages.messageNotFound });
             return;
         }
         res.json(message);
@@ -44,16 +45,16 @@ exports.getSingleMessage = function (req, res) {
 
 exports.postMessage = function (req, res) {
     if (!req.body.text) {
-        return res.status(400).send({ message: 'Text field is required' });
+        return res.status(400).send({ message: messages.textFieldRequired });
     }
 
     model.insert(req.body, function (err, savedMessage) {
         if (err) {
             console.error(err);
             if (err.errorType === 'uniqueViolated') {
-                res.status(400).send({ message: 'Text must be unique' });
+                res.status(400).send({ message: messages.textMustBeUnique });
             } else {
-                res.status(500).send({ message: 'Database error saving new message.' });
+                res.status(500).send({ message: messages.databaseErrorSavingMessage });
             }
             return;
         }
@@ -61,23 +62,22 @@ exports.postMessage = function (req, res) {
     });
 };
 
-
 exports.putMessage = function (req, res) {
     if (!req.params.id || req.params.id === 'undefined') {
-        return res.status(400).send({ message: 'id field is required' });
+        return res.status(400).send({ message: messages.idFieldRequired });
     }
     if (!req.body.text) {
-        return res.status(400).send({ message: 'Text field is required' });
+        return res.status(400).send({ message: messages.textFieldRequired });
     }
 
     model.findByIdAndUpdate(req.params.id, { text: req.body.text }, { new: true }, function (err, updatedMessage) {
         if (err) {
             console.error(err);
-            res.status(500).send({ message: 'Database error updating the message.' });
+            res.status(500).send({ message: messages.databaseErrorUpdatingMessage });
             return;
         }
         if (!updatedMessage) {
-            res.status(404).send({ message: 'Message not found' });
+            res.status(404).send({ message: messages.messageNotFound });
             return;
         }
         res.json(updatedMessage);
@@ -86,28 +86,28 @@ exports.putMessage = function (req, res) {
 
 exports.deleteMessage = function (req, res) {
     if (!req.params.id || req.params.id === 'undefined') {
-        return res.status(400).send({ message: 'id field is required' });
+        return res.status(400).send({ message: messages.idFieldRequired });
     }
 
     model.findByIdWithoutProj(req.params.id, function (err, message) {
         if (err) {
             console.error(err);
-            res.status(500).send({ message: 'Database error finding the message.' });
+            res.status(500).send({ message: messages.databaseErrorFindingMessage });
             return;
         }
-        
+
         if (!message) {
-            res.status(404).send({ message: 'Message not found' });
+            res.status(404).send({ message: messages.messageNotFound });
             return;
         }
 
         model.remove(req.params.id, function (err) {
             if (err) {
                 console.error(err);
-                res.status(500).send({ message: 'Database error deleting the message.' });
+                res.status(500).send({ message: messages.databaseErrorDeletingMessage });
                 return;
             }
-            res.json({ message: 'The message has been removed.' });
+            res.json({ message: messages.messageRemoved });
         });
     });
 };

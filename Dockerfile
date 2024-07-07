@@ -8,6 +8,11 @@ COPY package*.json ./
 
 RUN npm install
 
-COPY . .
+COPY ./app ./app
+COPY ./test ./test
+COPY ./config ./config
+COPY ./Makefile ./
+COPY ./server.js ./
+
 
 CMD ["node", "server.js"]
