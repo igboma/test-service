@@ -4,15 +4,17 @@ metadata:
   name: {{ .Chart.Name }}-servicemonitor
   namespace: {{ .Release.Namespace }}
   labels:
-    app: {{ .Chart.Name }}
+    app: prometheus
+    release: prometheus
 spec:
+  jobLabel: job
   selector:
     matchLabels:
       app: {{ .Chart.Name }}
   namespaceSelector:
     matchNames:
-    - default
+      - {{ .Release.Namespace }}
   endpoints:
-  - port: httpmetrics
-    path: /metrics
-    interval: 30s
+    - port: {{ .Values.service.portName }}
+      path: /metrics
+      interval: 30s
