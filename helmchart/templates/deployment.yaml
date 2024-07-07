@@ -11,6 +11,7 @@ spec:
       app: {{ .Release.Name }}
   template:
     metadata:
+      {{- with .Values.podAnnotations }}
       labels:
         app: {{ .Release.Name }}
     spec:
@@ -19,4 +20,5 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
-            - containerPort: 9091
+            - name: httpmetrics
+              containerPort: {{ .Values.service.targetPort }}
