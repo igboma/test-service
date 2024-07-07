@@ -13,6 +13,6 @@ spec:
     matchNames:
     - testserver
   endpoints:
-  - port: http
+  - port: http-metrics
     path: /metrics
     interval: 30s
