@@ -1,0 +1,78 @@
+name: CI for Main Branch using Node.js
+
+on:
+  push:
+    branches:
+      - develop
+  pull_request:
+    branches:
+      - develop
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "22" # Specify the Node.js version
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run audit of the package. Check vulnerabilities
+        run: npm audit
+        
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Run Mocha tests
+        run: npm test
+
+      - name: Build Docker image
+        run: docker build -t palindrome-server:${{ github.sha }} .
+
+      - name: Install trivy
+        run: |
+          wget -qO- https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+          echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee -a /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update
+          sudo apt-get install trivy
+
+      - name: Run Trivy vulnerability scan
+        run: trivy image palindrome-server:${{ github.sha }} --format json > trivy-report.json
+
+      - name: Create directory for Node.js code
+        run: mkdir nodejs
+
+      - name: Download Node.js script
+        run: |
+          curl -o nodejs/analyzeVulnerabilities.js https://raw.githubusercontent.com/igboma/devops-tools/main/nodejs/analyse_report.js
+
+      - name: Download package.json
+        run: |
+          curl -o nodejs/package.json https://raw.githubusercontent.com/igboma/devops-tools/main/nodejs/package.json
+
+      - name: Install Node.js dependencies for vulnerability analysis
+        working-directory: nodejs
+        run: npm install
+
+      - name: Run vulnerability analysis
+        working-directory: nodejs
+        run: node analyzeVulnerabilities.js $GITHUB_WORKSPACE/trivy-report.json
+
+      - name: Determine success or failure
+        run: |
+          if [ $? -eq 0 ]; then
+            echo "Vulnerability check passed. Proceeding with deployment."
+          else
+            echo "Vulnerability check failed. Halting deployment."
+            exit 1
+          fi
+
+      - name: Test Docker image
+        run: docker run -e JWT_SECRET=${{ secrets.JWT_SECRET }} palindrome-server:${{ github.sha }} npm test
+        continue-on-error: false # Ensure the workflow fails if tests fail
