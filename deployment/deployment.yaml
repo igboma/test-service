@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-server-deployment
+  labels:
+    app: test-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-server
+  template:
+    metadata:
+      labels:
+        app: test-server
+    spec:
+      containers:
+        - name: test-server
+          image: mikigbo/test-server:0.0.12
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: myapi
+              containerPort: 4000
+          env:
+            - name: PORT
+              value: "4000"
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-server-service
+  labels:
+    job: node-api
+    app: test-server
+spec:
+  type: ClusterIP
+  ports:
+    - port: 4000
+      targetPort: 4000
+      name: myapi
+      protocol: TCP
+  selector:
+    app: test-server
+
+---
+
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: test-server-servicemonitor
+  namespace: default
+  labels:
+    app: prometheus
+    release: prometheus
+spec:
+  jobLabel: job
+  selector:
+    matchLabels:
+      app: test-server
+  namespaceSelector:
+    matchNames:
+    - default
+  endpoints:
+    - port: myapi
+      path: /metrics
+      interval: 30s

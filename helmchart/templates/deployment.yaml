@@ -11,10 +11,6 @@ spec:
       app: {{ .Release.Name }}
   template:
     metadata:
-      annotations:
-        prometheus.io/scrape: "true"
-        prometheus.io/path: "/metrics"
-        prometheus.io/port: "3000"
       labels:
         app: {{ .Release.Name }}
     spec:
@@ -23,5 +19,8 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
-            - name: httpmetrics
+            - name: {{ .Values.service.portName }}
               containerPort: {{ .Values.service.targetPort }}
+          env:
+            - name: PORT
+              value: "{{ .Values.service.targetPort }}"
