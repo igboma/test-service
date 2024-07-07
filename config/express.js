@@ -9,6 +9,8 @@ const methodOverride = require('method-override');
 const config = require('./config');
 const router = express.Router();
 
+const { metricsMiddleware, register } = require('../app/middlewares/metrics.middleware');
+
 module.exports = function () {
 	// Initialize express app
 	const app = express();
@@ -40,9 +42,26 @@ module.exports = function () {
 	app.use(express.json());
 	app.use(methodOverride());
 
+	// Use the metrics middleware
+	app.use(metricsMiddleware);
+
 	// Routes definition
 	router.use('/api/v1', require('../app/routes/message.server.routes'));
-	router.use('/', require('../app/routes/home.server.routes')); // Include the new routes here
+	// router.use('/', require('../app/routes/home.server.routes')); // Include the new routes here
+
+	// Metrics endpoint
+	
+	router.get('/', async (req, res) => {
+		res.status(200).send('<html><body><h1>Welcome to Palindrome service</h1></body></html>');
+	});
+	router.get('/metrics', async (req, res) => {
+		res.set('Content-Type', register.contentType);
+		res.end(await register.metrics());
+	});
+
+	router.get('/health', async (req, res) => {
+		res.status(200).json({ status: 'up' });
+	});
 
 	app.use(router);
 
@@ -61,7 +80,7 @@ module.exports = function () {
 	// Assume 501 since no middleware responded
 	app.use(function (req, res) {
 		res.status(501).send({
-			message: 'The requested endpoint does not exists or is not implemented.'
+			message: 'The requested endpoint does not exist or is not implemented.'
 		});
 	});
 
