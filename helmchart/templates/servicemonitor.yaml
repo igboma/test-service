@@ -11,7 +11,7 @@ spec:
       app: {{ .Chart.Name }}
   namespaceSelector:
     matchNames:
-    - testserver
+    - default
   endpoints:
   - port: httpmetrics
     path: /metrics
