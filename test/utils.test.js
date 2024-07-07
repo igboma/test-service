@@ -19,6 +19,6 @@ describe('isTextPalindrome', () => {
   });
 
   it('should return true for a numeric palindrome', () => {
-    expect(isTextPalindrome('12321')).to.be.false;
+    expect(isTextPalindrome('12321')).to.be.true;
   });
 });
