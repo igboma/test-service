@@ -14,6 +14,7 @@ if (!module.parent) {
     process.on('SIGINT', function () {
         console.log('Gracefully shutting down from SIGINT (Ctrl-C)');
          // some other closing procedures go here
+         server.close();
         process.exit(1);
     });
 }
