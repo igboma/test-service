@@ -28,11 +28,24 @@ jobs:
       - name: Run Trivy vulnerability scan
         run: trivy image test-server:${{ github.event.release.tag_name }} --format json > trivy-report.json
 
-      - name: Analyse vulnerability report script
-        run: curl -o process_vulnerability_report.py https://raw.githubusercontent.com/mikigbo/devops-tools/main/process_vulnerability_report.py
+      - name: Create directory for Node.js code
+        run: mkdir nodejs
 
-      - name: Process vulnerability report
-        run: python process_vulnerability_report.py trivy-report.json
+      - name: Download Node.js script
+        run: |
+          curl -o nodejs/analyzeVulnerabilities.js https://raw.githubusercontent.com/igboma/devops-tools/main/nodejs/analyse_report.js
+
+      - name: Download package.json
+        run: |
+          curl -o nodejs/package.json https://raw.githubusercontent.com/igboma/devops-tools/main/nodejs/package.json
+
+      - name: Install Node.js dependencies for vulnerability analysis
+        working-directory: nodejs
+        run: npm install
+
+      - name: Run vulnerability analysis
+        working-directory: nodejs
+        run: node analyzeVulnerabilities.js $GITHUB_WORKSPACE/trivy-report.json
 
       - name: Determine success or failure
         run: |
