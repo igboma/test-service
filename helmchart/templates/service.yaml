@@ -3,16 +3,14 @@ kind: Service
 metadata:
   name: {{ .Release.Name }}-service
   labels:
+    job: {{ .Release.Name }}
     app: {{ .Release.Name }}
-  annotations:
-    prometheus.io/scrape: "true"
-    prometheus.io/path: "/metrics"
-    prometheus.io/port: "3000"
 spec:
   type: {{ .Values.service.type }}
   ports:
     - port: {{ .Values.service.port }}
       targetPort: {{ .Values.service.targetPort }}
-      name: httpmetrics
+      name: {{ .Values.service.portName }}
+      protocol: TCP
   selector:
     app: {{ .Release.Name }}
