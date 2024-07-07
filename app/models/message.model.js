@@ -1,5 +1,6 @@
 const Datastore = require('@seald-io/nedb');
 const db = new Datastore();
+const { isTextPalindrome } = require('../helper/utils');
 
 class Message {
 	constructor() {
@@ -40,33 +41,28 @@ class Message {
 	}
 
 	insert(data, callback) {
-		data.isPalindrome = this.isTextPalindrome(data.text);
+		data.isPalindrome = isTextPalindrome(data.text);
 		data.dateAdded = new Date();
 		db.insert(data, callback);
 	}
 
 	findByIdAndUpdate(id, update, options, callback) {
+		update.isPalindrome = isTextPalindrome(update.text);
 		if (options.new) {
 			db.update({ _id: id }, { $set: update }, {}, (err, numReplaced) => {
-				if (err ) {
+				if (err) {
 					return callback(err);
 				};
-				if(numReplaced === 0){
+				if (numReplaced === 0) {
 					callback(null, numReplaced);
 				}
-				else{
+				else {
 					db.findOne({ _id: id }, {}, callback);
 				}
 			});
 		} else {
 			db.update({ _id: id }, { $set: update }, {}, callback);
 		}
-	}
-
-	isTextPalindrome(text) {
-		text = text || "";
-		const cleanedText = text.replace(/[^A-Za-z0-9]/g, "").toLowerCase(); // remove all non alphanumric character
-		return cleanedText === cleanedText.split("").reverse().join("");
 	}
 }
 

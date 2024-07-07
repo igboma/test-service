@@ -35,7 +35,6 @@ module.exports = function () {
 
 	// Showing stack errors
 	app.set('showStackError', true);
-
 	// Environment dependent middleware
 	app.locals.cache = 'memory';
 
@@ -47,10 +46,9 @@ module.exports = function () {
 
 	// Routes definition
 	router.use('/api/v1', require('../app/routes/message.server.routes'));
-	// router.use('/', require('../app/routes/home.server.routes')); // Include the new routes here
 
 	// Metrics endpoint
-	
+
 	router.get('/', async (req, res) => {
 		res.status(200).send('<html><body><h1>Welcome to Palindrome service</h1></body></html>');
 	});
@@ -60,7 +58,7 @@ module.exports = function () {
 	});
 
 	router.get('/health', async (req, res) => {
-		res.status(200).json({ status: 'up' });
+		res.status(200).json({ status: 'UP' });
 	});
 
 	app.use(router);
