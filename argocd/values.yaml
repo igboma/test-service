@@ -1,5 +1,8 @@
 replicaCount: 1
 
 image:
-  tag: "0.0.12"
+  tag: "1.0.11"
 
+config:
+  lang: "en"
+  APP_NAME: palindrome-server
