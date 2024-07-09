@@ -70,6 +70,11 @@ jobs:
           docker push mikigbo/test-server:${{ github.event.release.tag_name }}
           docker push mikigbo/test-server:latest
 
+      - name: Install yq
+        run: |
+            sudo apt-get update && sudo apt-get install -y python3-pip
+            pip3 install yq
+    
       - name: Update values.yaml in main branch and merge to release tag
         run: |
             TAG=$(echo "${{ github.event.release.tag_name }}")
@@ -84,7 +89,8 @@ jobs:
             git pull origin main
         
             # Update the tag in values.yaml
-            sed -i "s/tag: .*/tag: \"$TAG\"/" argocd/values.yaml
+            yq eval ".image.tag = \"$TAG\"" -i argocd/values.yaml
+            #sed -i "s/tag: .*/tag: \"$TAG\"/" argocd/values.yaml
         
             # Commit and push changes
             git add argocd/values.yaml
