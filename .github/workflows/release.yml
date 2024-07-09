@@ -23,7 +23,7 @@ jobs:
           wget -qO- https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
           echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee -a /etc/apt/sources.list.d/trivy.list
           sudo apt-get update
-          sudo apt-get install trivy
+          sudo apt-get install -y trivy
 
       - name: Run Trivy vulnerability scan
         run: trivy image test-server:${{ github.event.release.tag_name }} --format json > trivy-report.json
@@ -32,12 +32,10 @@ jobs:
         run: mkdir nodejs
 
       - name: Download Node.js script
-        run: |
-          curl -o nodejs/analyzeVulnerabilities.js https://raw.githubusercontent.com/igboma/devops-tools/main/nodejs/analyse_report.js
+        run: curl -o nodejs/analyzeVulnerabilities.js https://raw.githubusercontent.com/igboma/devops-tools/main/nodejs/analyse_report.js
 
       - name: Download package.json
-        run: |
-          curl -o nodejs/package.json https://raw.githubusercontent.com/igboma/devops-tools/main/nodejs/package.json
+        run: curl -o nodejs/package.json https://raw.githubusercontent.com/igboma/devops-tools/main/nodejs/package.json
 
       - name: Install Node.js dependencies for vulnerability analysis
         working-directory: nodejs
@@ -56,7 +54,7 @@ jobs:
             exit 1
           fi
 
-      - name: delete vulnerability file
+      - name: Delete vulnerability file
         run: rm trivy-report.json
 
       - name: Login to Docker Hub
@@ -70,33 +68,34 @@ jobs:
           docker push mikigbo/test-server:${{ github.event.release.tag_name }}
           docker push mikigbo/test-server:latest
 
-      - name: Update values.yaml in main branch and merge to release tag
+      - name: Update values.yaml in develop branch and merge to release tag
         run: |
-            TAG=$(echo "${{ github.event.release.tag_name }}")
+          TAG=${{ github.event.release.tag_name }}
         
-            # Configure Git
-            git config user.email "actions@github.com"
-            git config user.name "GitHub Actions"
+          # Configure Git
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
         
-            # Fetch and checkout main branch
-            git fetch origin
-            git checkout main
-            git pull origin main
+          # Fetch and checkout develop branch
+          git fetch origin
+          git checkout develop
+          git pull origin develop --rebase
         
-            # Update the tag in values.yaml
-            sed -i "s/tag: .*/tag: \"$TAG\"/" argocd/values.yaml
+          # Update the tag in values.yaml using sed
+          sed -i "s/\(tag:\s*\).*$/\1\"$TAG\"/" argocd/values.yaml
         
-            # Commit and push changes
-            git add argocd/values.yaml
-            git commit -m "Update values.yaml for release $TAG"
-            git push origin main
+          # Commit and push changes
+          git add argocd/values.yaml
+          git commit -m "Update values.yaml for release $TAG"
+          git push origin develop
             
-            # Checkout cd-release branch
-            git checkout cd-release
-            git pull origin cd-release
+          # Fetch and checkout cd-release branch
+          git fetch origin
+          git checkout cd-release
+          git pull origin cd-release --rebase
         
-            # Merge main into cd-release, preferring main's changes in conflicts and allowing unrelated histories
-            git merge origin/main --allow-unrelated-histories -X theirs || exit 1
+          # Merge develop into cd-release, preferring develop's changes in conflicts
+          git merge develop -X theirs --allow-unrelated-histories
         
-            # Push changes
-            git push origin cd-release
+          # Push changes
+          git push origin cd-release
