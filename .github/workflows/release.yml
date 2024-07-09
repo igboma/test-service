@@ -68,12 +68,7 @@ jobs:
           docker push mikigbo/test-server:${{ github.event.release.tag_name }}
           docker push mikigbo/test-server:latest
 
-      - name: Install yq
-        run: |
-          sudo apt-get update && sudo apt-get install -y python3-pip
-          pip3 install yq
-
-      - name: Update values.yaml in main branch and merge to release tag
+      - name: Update values.yaml in develop branch and merge to release tag
         run: |
           TAG=${{ github.event.release.tag_name }}
         
@@ -81,26 +76,26 @@ jobs:
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
         
-          # Fetch and checkout main branch
+          # Fetch and checkout develop branch
           git fetch origin
-          git checkout main
-          git pull origin main
+          git checkout develop
+          git pull origin develop --rebase
         
-          # Update the tag in values.yaml
-          yq eval ".image.tag = \"$TAG\"" -i argocd/values.yaml
+          # Update the tag in values.yaml using sed
+          sed -i "s/\(tag:\s*\).*$/\1\"$TAG\"/" argocd/values.yaml
         
           # Commit and push changes
           git add argocd/values.yaml
           git commit -m "Update values.yaml for release $TAG"
-          git push origin main
+          git push origin develop
             
           # Fetch and checkout cd-release branch
           git fetch origin
           git checkout cd-release
-          git pull origin cd-release
+          git pull origin cd-release --rebase
         
-          # Merge main into cd-release, preferring main's changes in conflicts
-          git merge main -X theirs --allow-unrelated-histories
+          # Merge develop into cd-release, preferring develop's changes in conflicts
+          git merge develop -X theirs --allow-unrelated-histories
         
           # Push changes
           git push origin cd-release
