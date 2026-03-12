@@ -17,32 +17,53 @@ jobs:
   consume:
     runs-on: ubuntu-slim
     env:
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_TOKEN: ${{ github.token }}
       RUN_ID: ${{ github.event.workflow_run.id }}
+      ARTIFACT_NAME: intake-run-manifest-${{ github.event.workflow_run.id }}
     steps:
-      - name: Resolve and read intake manifest artifact
+      - name: Wait for artifact to become available
         run: |
           set -euo pipefail
+          attempts=12
+          sleep_seconds=5
+          found=""
 
-          artifact_name="intake-run-manifest-${RUN_ID}"
-          artifact_id="$(gh api "repos/${{ github.repository }}/actions/runs/${RUN_ID}/artifacts" \
-            --jq ".artifacts[] | select(.name==\"${artifact_name}\") | .id" | head -n1)"
+          for i in $(seq 1 "${attempts}"); do
+            found="$(gh api "repos/${{ github.repository }}/actions/runs/${RUN_ID}/artifacts" \
+              --jq ".artifacts[] | select(.name==\"${ARTIFACT_NAME}\") | .id" | head -n1 || true)"
+            if [ -n "${found}" ]; then
+              echo "Found artifact ${ARTIFACT_NAME} (id=${found}) on attempt ${i}/${attempts}."
+              break
+            fi
+            echo "Artifact ${ARTIFACT_NAME} not visible yet (attempt ${i}/${attempts}), retrying in ${sleep_seconds}s..."
+            sleep "${sleep_seconds}"
+          done
 
-          if [ -z "${artifact_id}" ]; then
-            echo "Artifact not found for run ${RUN_ID}."
+          if [ -z "${found}" ]; then
+            echo "Artifact ${ARTIFACT_NAME} was not found for run ${RUN_ID}."
             exit 1
           fi
 
-          raw_artifact_file="$(mktemp)"
-          gh api "repos/${{ github.repository }}/actions/artifacts/${artifact_id}/zip" > "${raw_artifact_file}"
+      - name: Download intake manifest artifact
+        uses: actions/download-artifact@v8
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ github.event.workflow_run.id }}
+          name: intake-run-manifest-${{ github.event.workflow_run.id }}
+          path: /tmp/intake-manifest
 
-          if [ "$(head -c 2 "${raw_artifact_file}" || true)" = "PK" ]; then
-            unzip -p "${raw_artifact_file}" intake-manifest.json > /tmp/intake-manifest.json
-          else
-            cp "${raw_artifact_file}" /tmp/intake-manifest.json
+      - name: Resolve and read intake manifest
+        run: |
+          set -euo pipefail
+
+          manifest_path="/tmp/intake-manifest/intake-manifest.json"
+          if [ ! -f "${manifest_path}" ]; then
+            echo "Expected manifest not found at ${manifest_path}. Listing downloaded files:"
+            find /tmp/intake-manifest -maxdepth 3 -type f -print || true
+            exit 1
           fi
 
-          python3 -m json.tool /tmp/intake-manifest.json >/dev/null
+          python3 -m json.tool "${manifest_path}" >/dev/null
 
           echo "Resolved manifest from run ${RUN_ID}:"
-          cat /tmp/intake-manifest.json
+          cat "${manifest_path}"
