@@ -19,47 +19,44 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       RUN_ID: ${{ github.event.workflow_run.id }}
-      ARTIFACT_NAME: intake-run-manifest-${{ github.event.workflow_run.id }}
     steps:
       - name: Wait for artifact to become available
         run: |
           set -euo pipefail
           attempts=12
           sleep_seconds=5
-          found=""
+          found_count=0
 
           for i in $(seq 1 "${attempts}"); do
-            found="$(gh api "repos/${{ github.repository }}/actions/runs/${RUN_ID}/artifacts" \
-              --jq ".artifacts[] | select(.name==\"${ARTIFACT_NAME}\") | .id" | head -n1 || true)"
-            if [ -n "${found}" ]; then
-              echo "Found artifact ${ARTIFACT_NAME} (id=${found}) on attempt ${i}/${attempts}."
+            found_count="$(gh api "repos/${{ github.repository }}/actions/runs/${RUN_ID}/artifacts" --jq '.total_count' || echo 0)"
+            if [ "${found_count}" -gt 0 ]; then
+              echo "Found ${found_count} artifact(s) for run ${RUN_ID} on attempt ${i}/${attempts}."
               break
             fi
-            echo "Artifact ${ARTIFACT_NAME} not visible yet (attempt ${i}/${attempts}), retrying in ${sleep_seconds}s..."
+            echo "No artifacts visible yet for run ${RUN_ID} (attempt ${i}/${attempts}), retrying in ${sleep_seconds}s..."
             sleep "${sleep_seconds}"
           done
 
-          if [ -z "${found}" ]; then
-            echo "Artifact ${ARTIFACT_NAME} was not found for run ${RUN_ID}."
+          if [ "${found_count}" -eq 0 ]; then
+            echo "No artifacts found for run ${RUN_ID}."
             exit 1
           fi
 
-      - name: Download intake manifest artifact
+      - name: Download artifacts from producer run
         uses: actions/download-artifact@v8
         with:
           github-token: ${{ github.token }}
           run-id: ${{ github.event.workflow_run.id }}
-          name: intake-run-manifest-${{ github.event.workflow_run.id }}
           path: /tmp/intake-manifest
 
       - name: Resolve and read intake manifest
         run: |
           set -euo pipefail
 
-          manifest_path="/tmp/intake-manifest/intake-manifest.json"
-          if [ ! -f "${manifest_path}" ]; then
-            echo "Expected manifest not found at ${manifest_path}. Listing downloaded files:"
-            find /tmp/intake-manifest -maxdepth 3 -type f -print || true
+          manifest_path="$(find /tmp/intake-manifest -type f -name 'intake-manifest.json' | head -n1 || true)"
+          if [ -z "${manifest_path}" ]; then
+            echo "intake-manifest.json not found. Downloaded files:"
+            find /tmp/intake-manifest -maxdepth 4 -type f -print || true
             exit 1
           fi
 
