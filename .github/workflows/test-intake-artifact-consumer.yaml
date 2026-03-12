@@ -1,0 +1,48 @@
+name: Test Intake Artifact Consumer
+run-name: >-
+  Test artifact consumer · run=${{ github.event.workflow_run.id }}
+
+on:
+  workflow_run:
+    workflows:
+      - Test Intake Artifact Producer
+    types:
+      - completed
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  consume:
+    runs-on: ubuntu-slim
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      RUN_ID: ${{ github.event.workflow_run.id }}
+    steps:
+      - name: Resolve and read intake manifest artifact
+        run: |
+          set -euo pipefail
+
+          artifact_name="intake-run-manifest-${RUN_ID}"
+          artifact_id="$(gh api "repos/${{ github.repository }}/actions/runs/${RUN_ID}/artifacts" \
+            --jq ".artifacts[] | select(.name==\"${artifact_name}\") | .id" | head -n1)"
+
+          if [ -z "${artifact_id}" ]; then
+            echo "Artifact not found for run ${RUN_ID}."
+            exit 1
+          fi
+
+          raw_artifact_file="$(mktemp)"
+          gh api "repos/${{ github.repository }}/actions/artifacts/${artifact_id}/zip" > "${raw_artifact_file}"
+
+          if [ "$(head -c 2 "${raw_artifact_file}" || true)" = "PK" ]; then
+            unzip -p "${raw_artifact_file}" intake-manifest.json > /tmp/intake-manifest.json
+          else
+            cp "${raw_artifact_file}" /tmp/intake-manifest.json
+          fi
+
+          python3 -m json.tool /tmp/intake-manifest.json >/dev/null
+
+          echo "Resolved manifest from run ${RUN_ID}:"
+          cat /tmp/intake-manifest.json

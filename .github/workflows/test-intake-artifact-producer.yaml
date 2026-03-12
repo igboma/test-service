@@ -1,0 +1,40 @@
+name: Test Intake Artifact Producer
+run-name: >-
+  Test artifact producer · archive=${{ inputs.archive }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      archive:
+        description: Upload artifact in archive format
+        required: true
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  produce:
+    runs-on: ubuntu-slim
+    steps:
+      - name: Create intake manifest
+        run: |
+          cat > /tmp/intake-manifest.json <<'JSON'
+          {"input_pr_numbers":[280271,280272],"source":"test-intake-artifact-producer"}
+          JSON
+          echo "Manifest:"
+          cat /tmp/intake-manifest.json
+
+      - name: Upload intake run manifest artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: intake-run-manifest-${{ github.run_id }}
+          path: /tmp/intake-manifest.json
+          if-no-files-found: error
+          retention-days: 7
+          archive: ${{ inputs.archive }}
